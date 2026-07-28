@@ -55,3 +55,57 @@ def test_load_epub_collapses_blank_line_runs(tmp_path):
     result = load_epub(path)
 
     assert "\n\n\n" not in result
+
+
+def _build_hard_wrapped_epub(tmp_path):
+    book = epub.EpubBook()
+    book.set_identifier("test-id")
+    book.set_title("Test Book")
+    book.set_language("en")
+    book.add_author("Test Author")
+
+    chapter = epub.EpubHtml(title="Chapter 1", file_name="chap1.xhtml", lang="en")
+    chapter.content = (
+        "<html><body>"
+        "<h2>CHAPTER 1.<br/>\nA Title</h2>"
+        "<p>\nThis line is hard-wrapped in the source and\n"
+        "continues here with no real break.\n</p>"
+        '<p class="poem">First verse line,<br/>\nSecond verse line.</p>'
+        "<pre>   Right foot,\n     near the Fender,</pre>"
+        "</body></html>"
+    )
+    book.add_item(chapter)
+    book.toc = (epub.Link("chap1.xhtml", "Chapter 1", "chap1"),)
+    book.add_item(epub.EpubNcx())
+    book.add_item(epub.EpubNav())
+    book.spine = ["nav", chapter]
+
+    path = tmp_path / "hard_wrapped.epub"
+    epub.write_epub(str(path), book)
+    return str(path)
+
+
+def test_load_epub_unwraps_hard_wrapped_paragraph_lines(tmp_path):
+    path = _build_hard_wrapped_epub(tmp_path)
+
+    result = load_epub(path)
+
+    assert "and\ncontinues" not in result
+    assert "and continues here with no real break." in result
+
+
+def test_load_epub_preserves_intentional_br_line_breaks(tmp_path):
+    path = _build_hard_wrapped_epub(tmp_path)
+
+    result = load_epub(path)
+
+    assert "CHAPTER 1.\nA Title" in result
+    assert "First verse line,\nSecond verse line." in result
+
+
+def test_load_epub_preserves_pre_formatting(tmp_path):
+    path = _build_hard_wrapped_epub(tmp_path)
+
+    result = load_epub(path)
+
+    assert "Right foot,\n     near the Fender," in result
