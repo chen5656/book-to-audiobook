@@ -4,7 +4,7 @@ from ebooklib import epub
 
 from src.loaders.epub_loader import load_epub
 
-FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
+BOOKS_DIR = Path(__file__).parent.parent.parent / "books"
 
 
 def _build_synthetic_epub(tmp_path):
@@ -33,7 +33,7 @@ def _build_synthetic_epub(tmp_path):
 
 
 def test_load_epub_extracts_real_book_content():
-    result = load_epub(str(FIXTURES_DIR / "alice.epub"))
+    result = load_epub(str(BOOKS_DIR / "alice.epub"))
 
     assert "CHAPTER I" in result
     assert "Rabbit-Hole" in result

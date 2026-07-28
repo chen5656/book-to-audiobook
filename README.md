@@ -22,6 +22,10 @@ pública. Não tem passo de instalação separado:
    começa/termina pra você confirmar, mostra trechos com pronúncia
    arriscada pra revisão, e só então gera o mp3.
 
+Pra testar sem precisar de um livro seu: `books/alice.epub` já vem no repo
+(*Alice's Adventures in Wonderland*, domínio público) — peça *"transforme
+books/alice.epub em audiobook"* e siga os Gates.
+
 A primeira execução pode demorar um pouco mais — a skill confere/instala
 dependências sozinha (`doctor`). Isso não é travamento.
 
@@ -54,14 +58,14 @@ controlar os parâmetros manualmente:
 python -m src.cli doctor
 
 # Extrai texto + metadados + candidatos de início/fim do conteúdo real
-python -m src.cli inspect tests/fixtures/alice.epub --json
+python -m src.cli inspect books/alice.epub --json
 
 # Sinaliza siglas/números/nomes estrangeiros pra revisar pronúncia
-python -m src.cli pronunciation tests/fixtures/alice.epub \
+python -m src.cli pronunciation books/alice.epub \
   --start-char 2100 --end-char 158000 --json
 
 # Gera o audiobook (offsets decididos a partir do inspect acima)
-python -m src.cli convert tests/fixtures/alice.epub \
+python -m src.cli convert books/alice.epub \
   --start-char 2100 --end-char 158000 \
   --voice pt-BR-AntonioNeural --translate-to portuguese \
   --output alice.mp3
@@ -88,5 +92,5 @@ src/
   pipeline.py                     orquestra tudo (convert_book_to_audio)
   cli.py                            doctor | inspect | pronunciation | convert
 .claude/skills/book-to-audiobook/  a Skill/plugin do Claude Code
-tests/fixtures/alice.epub          fixture de demo (domínio público, Project Gutenberg)
+books/alice.epub          fixture de demo (domínio público, Project Gutenberg)
 ```
