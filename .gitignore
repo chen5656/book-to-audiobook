@@ -4,6 +4,9 @@ conteudo_livro_ptbr.json
 
 # Claude Code isolated worktrees
 .claude/worktrees/
+
+# Claude Code personal/local instructions (not shared with other clones)
+CLAUDE.local.md
 audiobook.mp3
 audiobook_*.mp3
 
@@ -108,6 +111,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+output/
 nosetests.xml
 coverage.xml
 *.cover
