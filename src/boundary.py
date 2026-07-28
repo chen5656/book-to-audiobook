@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-PREVIEW_RADIUS = 100
+PREVIEW_RADIUS = 300
 
 KINDS = (
     "gutenberg_marker",

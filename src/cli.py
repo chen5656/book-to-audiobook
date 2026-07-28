@@ -1,14 +1,17 @@
 import argparse
+import asyncio
 import json
 import shutil
 import sys
 from pathlib import Path
 
 from src.boundary import find_boundary_candidates, trim_to_boundaries
+from src.cleaning import clean_text
 from src.metadata import extract_title_author
 from src.pipeline import convert_book_to_audio
 from src.pronunciation import flag_risky_tokens
-from src.text_cache import cache_path_for, read_or_extract
+from src.text_cache import cache_path_for, read_or_extract, read_or_extract_raw, read_or_translate
+from src.text_to_speech import list_voices
 
 _REQUIRED_MODULES = ("edge_tts", "ebooklib", "fitz", "bs4", "deep_translator", "pydub", "tqdm")
 
@@ -34,7 +37,7 @@ def cmd_doctor(args) -> int:
 
 def cmd_inspect(args) -> int:
     fmt = args.format
-    text = read_or_extract(args.book_path, format=fmt)
+    text, cleaning_stats = clean_text(read_or_extract_raw(args.book_path, format=fmt))
     metadata = extract_title_author(args.book_path, format=fmt)
     candidates = find_boundary_candidates(text)
 
@@ -48,6 +51,7 @@ def cmd_inspect(args) -> int:
             "author": metadata.author,
             "subtitle": metadata.subtitle,
         },
+        "cleaning": cleaning_stats,
         "boundary_candidates": [
             {
                 "char_offset": c.char_offset,
@@ -70,19 +74,34 @@ def cmd_inspect(args) -> int:
 
 
 def cmd_pronunciation(args) -> int:
+    if args.translate_to and not args.source_lang:
+        print("[FAIL] --translate-to requires --source-lang.", file=sys.stderr)
+        return 1
+
     text = read_or_extract(args.book_path)
     try:
         excerpt = trim_to_boundaries(text, args.start_char, args.end_char)
     except ValueError as e:
         print(f"[FAIL] {e}", file=sys.stderr)
         return 1
-    flagged = flag_risky_tokens(excerpt)
-    for flag in flagged:
-        flag["char_offset"] += args.start_char
+
+    if args.translate_to:
+        # Flag the text that will actually be spoken (post-translation), reusing
+        # the same cache `convert` reads from, so translation only happens once.
+        excerpt = read_or_translate(
+            args.book_path, args.start_char, args.end_char,
+            args.source_lang, args.translate_to, excerpt,
+        )
+        flagged = flag_risky_tokens(excerpt)
+    else:
+        flagged = flag_risky_tokens(excerpt)
+        for flag in flagged:
+            flag["char_offset"] += args.start_char
 
     result = {
         "start_char": args.start_char,
         "end_char": args.end_char,
+        "translated_to": args.translate_to,
         "flagged_tokens": flagged,
     }
 
@@ -106,9 +125,23 @@ def cmd_convert(args) -> int:
         end_char=args.end_char,
         output_file=args.output,
         voice=args.voice,
+        translate_source=args.source_lang,
+        rate=args.rate,
         translate_to=args.translate_to,
     )
     print(f"[OK] Audiobook saved to {args.output}")
+    return 0
+
+
+def cmd_voices(args) -> int:
+    voices = asyncio.run(list_voices(args.lang))
+
+    if args.json:
+        print(json.dumps(voices, ensure_ascii=False, indent=2))
+    else:
+        for v in voices:
+            print(f"  {v['ShortName']} [{v['Gender']}] {v['Locale']}")
+
     return 0
 
 
@@ -128,6 +161,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_pronunciation.add_argument("book_path")
     p_pronunciation.add_argument("--start-char", type=int, required=True)
     p_pronunciation.add_argument("--end-char", type=int, required=True)
+    p_pronunciation.add_argument("--source-lang", default=None)
+    p_pronunciation.add_argument("--translate-to", default=None)
     p_pronunciation.add_argument("--json", action="store_true")
     p_pronunciation.set_defaults(func=cmd_pronunciation)
 
@@ -135,10 +170,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_convert.add_argument("book_path")
     p_convert.add_argument("--start-char", type=int, required=True)
     p_convert.add_argument("--end-char", type=int, required=True)
-    p_convert.add_argument("--voice", default="pt-BR-AntonioNeural")
+    p_convert.add_argument("--voice", required=True)
+    p_convert.add_argument("--source-lang", required=True)
+    p_convert.add_argument("--rate", default="+0%")
     p_convert.add_argument("--translate-to", default=None)
     p_convert.add_argument("--output", required=True)
     p_convert.set_defaults(func=cmd_convert)
+
+    p_voices = subparsers.add_parser("voices")
+    p_voices.add_argument("--lang", default=None)
+    p_voices.add_argument("--json", action="store_true")
+    p_voices.set_defaults(func=cmd_voices)
 
     return parser
 
