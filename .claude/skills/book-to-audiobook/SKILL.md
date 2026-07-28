@@ -122,12 +122,25 @@ entirely and go straight to Gate 6.
 
 ### Gate 6 — Review pronunciation
 
-This same `pronunciation` call also flags pronunciation-risky tokens **in
-the translated text itself** (if Gate 5 ran), since that's what actually
-gets spoken — reviewing the original-language text would miss whatever the
-translation introduced or changed. If no translation was requested, run
-the same command without `--source-lang`/`--translate-to`; it flags tokens
-in the original text instead.
+**If Gate 5 ran (translation requested): do not call `pronunciation` again —
+reuse its JSON response.** That response already flags pronunciation-risky
+tokens **in the translated text itself**, since that's what actually gets
+spoken — reviewing the original-language text would miss whatever the
+translation introduced or changed. For reference, the response you're
+reusing came from:
+
+```
+python -m src.cli pronunciation <path> --start-char N --end-char M \
+  --source-lang <src> --translate-to <target> --json
+```
+
+**If no translation was requested**, this gate makes its own first
+`pronunciation` call — the same command *without* `--source-lang`/
+`--translate-to` — which flags tokens in the original text instead:
+
+```
+python -m src.cli pronunciation <path> --start-char N --end-char M --json
+```
 
 Show the user the flagged tokens (acronyms, numbers, foreign names) with
 context from `flagged_tokens`. Let them correct spellings that the TTS
