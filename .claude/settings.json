@@ -1,0 +1,20 @@
+{
+  "enabledPlugins": {
+    "superpowers@superpowers-dev": true,
+    "improve@improve": true
+  },
+  "extraKnownMarketplaces": {
+    "superpowers-dev": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/obra/superpowers.git"
+      }
+    },
+    "improve": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/shadcn/improve.git"
+      }
+    }
+  }
+}

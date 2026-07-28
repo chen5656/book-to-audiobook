@@ -1,0 +1,8 @@
+{
+  "name": "book-to-audiobook",
+  "displayName": "Book to Audiobook",
+  "description": "Converte epub/pdf em audiobook narrado (opcionalmente traduzido pra pt-BR), 100% gratuito e sem chave de API (edge-tts e GoogleTranslator são serviços gratuitos, mas online — precisa de internet).",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/gomesfellipe/book-to-audiobook"
+}

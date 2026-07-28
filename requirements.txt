@@ -1,0 +1,30 @@
+# Texto para áudio
+edge-tts>=6.1.9
+
+# Manipulação de áudio
+pydub>=0.25.1
+
+# Barra de progresso
+tqdm>=4.66.1
+
+# Tradução de texto
+deep-translator>=1.11.4
+
+# Leitura de arquivos EPUB
+ebooklib>=0.18
+
+# Leitura de arquivos PDF
+PyMuPDF>=1.23.3
+
+# Parsing de HTML
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+
+# Requisições HTTP
+requests>=2.31.0
+
+# Gerenciamento de variáveis de ambiente
+python-dotenv>=1.0.0
+
+audioop-lts
+
