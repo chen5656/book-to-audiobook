@@ -1,7 +1,7 @@
 # book-to-audiobook
 
 <p align="center">
-  <img src="assets/logo.png" width="180" alt="book-to-audiobook hex sticker logo">
+  <img src="assets/banner.png" width="100%" alt="book-to-audiobook banner">
 </p>
 
 <p align="center">
