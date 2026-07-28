@@ -1,11 +1,12 @@
 # books/private/
 
-Coloque aqui os epub/pdf/txt dos livros que você quer converter em audiobook.
+Put the epub/pdf/txt files of the books you want to convert into audiobooks
+here.
 
-Este conteúdo **nunca é versionado** — `.gitignore` ignora tudo dentro desta
-pasta, exceto este `README.md` e o `.gitkeep`. Livros comerciais protegidos
-por direitos autorais não devem ir para o histórico do git.
+This content is **never versioned** — `.gitignore` ignores everything inside
+this folder except this `README.md` and the `.gitkeep`. Commercial,
+copyrighted books should never end up in the git history.
 
-Para converter um livro, abra o Claude Code na raiz deste repositório e peça
-para transformar o arquivo em audiobook — a skill `book-to-audiobook`
-encontra o arquivo aqui pelo nome, sem precisar do caminho completo.
+To convert a book, open Claude Code at the root of this repository and ask
+to turn the file into an audiobook — the `book-to-audiobook` skill finds the
+file here by name, no need for the full path.
