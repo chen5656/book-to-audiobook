@@ -1,6 +1,10 @@
 # book-to-audiobook
 
 <p align="center">
+  <img src="assets/logo.png" width="180" alt="book-to-audiobook hex sticker logo">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/price-100%25%20free-brightgreen.svg" alt="100% free">
