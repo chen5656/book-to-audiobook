@@ -27,7 +27,7 @@ def test_translate_requires_source_and_target():
 def test_translate_passes_source_and_target_through(monkeypatch):
     monkeypatch.setattr(translate_module, "GoogleTranslator", _FakeTranslator)
 
-    result = translate("Hello world.", source="en", target="pt", limite=4000)
+    result = translate("Hello world.", source="en", target="pt", limit=4000)
 
     assert result == "[en->pt] Hello world."
 
@@ -43,7 +43,7 @@ def test_translate_batches_respect_limite(monkeypatch):
     monkeypatch.setattr(translate_module, "GoogleTranslator", _RecordingTranslator)
 
     long_text = "Sentence one. Sentence two. Sentence three."
-    translate(long_text, source="en", target="pt", limite=15)
+    translate(long_text, source="en", target="pt", limit=15)
 
     assert len(captured_batches) > 1
     assert all(len(batch) <= 15 for batch in captured_batches)

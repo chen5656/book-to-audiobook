@@ -1,61 +1,48 @@
 from pydub import AudioSegment
 
-def dividir_texto_em_partes(texto, n):
+def split_text_into_parts(text, n_parts):
     """
-    Divide o texto em uma lista de n partes aproximadamente iguais.
+    Splits text into a list of n_parts approximately equal chunks,
+    without breaking words mid-way.
 
     Args:
-        texto (str): O texto a ser dividido.
-        n (int): O número de partes em que o texto será dividido.
+        text (str): The text to split.
+        n_parts (int): Number of parts to split into.
 
     Returns:
-        list: Lista contendo o texto dividido em n partes.
+        list: Text split into n_parts chunks.
     """
-    # Remove espaços extras e quebra de linhas para garantir melhor divisão
-    texto = texto.strip()
+    text = text.strip()
+    part_size = len(text) // n_parts
 
-    # Calcula o tamanho aproximado de cada parte
-    tamanho_parte = len(texto) // n
+    parts = []
+    start = 0
 
-    # Divisões do texto
-    partes = []
+    for i in range(n_parts):
+        end = start + part_size
 
-    # Ponto de início para a próxima parte
-    inicio = 0
+        if end < len(text):
+            while end < len(text) and text[end] not in [' ', '\n']:
+                end += 1
 
-    for i in range(n):
-        # Define o fim da parte, tentando não cortar palavras no meio
-        fim = inicio + tamanho_parte
+        parts.append(text[start:end].strip())
+        start = end
 
-        # Ajusta o fim para não cortar uma palavra
-        if fim < len(texto):
-            while fim < len(texto) and texto[fim] not in [' ', '\n']:
-                fim += 1
+    return parts
 
-        # Adiciona a parte à lista
-        partes.append(texto[inicio:fim].strip())
-
-        # Atualiza o início para a próxima parte
-        inicio = fim
-
-    return partes
-
-def combinar_arquivos_audio(arquivos, arquivo_saida):
+def combine_audio_files(files, output_file):
     """
-    Combina múltiplos arquivos de áudio MP3 em um único arquivo.
+    Combines multiple MP3 audio files into a single file.
 
     Args:
-        arquivos (list): Lista com os caminhos dos arquivos de áudio a serem combinados.
-        arquivo_saida (str): Caminho do arquivo de áudio combinado a ser salvo.
+        files (list): Paths of the audio files to combine.
+        output_file (str): Path of the combined audio file to save.
     """
-    # Inicializa um segmento de áudio vazio
-    audio_final = AudioSegment.empty()
+    combined_audio = AudioSegment.empty()
 
-    # Itera pelos arquivos e adiciona ao áudio final
-    for arquivo in arquivos:
-        audio = AudioSegment.from_mp3(arquivo)
-        audio_final += audio
+    for file in files:
+        audio = AudioSegment.from_mp3(file)
+        combined_audio += audio
 
-    # Exporta o áudio combinado para um único arquivo
-    audio_final.export(arquivo_saida, format="mp3")
-    print(f"Arquivo combinado salvo em: {arquivo_saida}")
+    combined_audio.export(output_file, format="mp3")
+    print(f"Combined file saved to: {output_file}")

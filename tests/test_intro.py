@@ -13,7 +13,7 @@ def test_build_intro_text_with_title_subtitle_and_author():
 
     assert result == (
         "Alice's Adventures in Wonderland. A tale of curious wonder. "
-        "De Lewis Carroll."
+        "Lewis Carroll."
     )
 
 

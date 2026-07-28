@@ -4,31 +4,31 @@ from deep_translator import GoogleTranslator
 from tqdm import tqdm
 
 
-def split_into_sentences(texto: str) -> list:
-    frases = re.split(r'(?<=[.!?]) +', texto)
-    return [frase.strip() for frase in frases if frase.strip()]
+def split_into_sentences(text: str) -> list:
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    return [sentence.strip() for sentence in sentences if sentence.strip()]
 
 
-def translate(texto_original: str, source: str, target: str, limite: int = 4000) -> str:
-    tradutor = GoogleTranslator(source=source, target=target)
+def translate(original_text: str, source: str, target: str, limit: int = 4000) -> str:
+    translator = GoogleTranslator(source=source, target=target)
 
-    frases = split_into_sentences(texto_original)
+    sentences = split_into_sentences(original_text)
 
-    partes = []
-    lote_atual = ""
+    batches = []
+    current_batch = ""
 
-    for frase in frases:
-        if len(lote_atual) + len(frase) + 1 <= limite:
-            lote_atual = f"{lote_atual} {frase}".strip() if lote_atual else frase
+    for sentence in sentences:
+        if len(current_batch) + len(sentence) + 1 <= limit:
+            current_batch = f"{current_batch} {sentence}".strip() if current_batch else sentence
         else:
-            partes.append(lote_atual)
-            lote_atual = frase
+            batches.append(current_batch)
+            current_batch = sentence
 
-    if lote_atual:
-        partes.append(lote_atual)
+    if current_batch:
+        batches.append(current_batch)
 
-    partes_traduzidas = [
-        tradutor.translate(parte) for parte in tqdm(partes, desc="Traduzindo lotes")
+    translated_batches = [
+        translator.translate(batch) for batch in tqdm(batches, desc="Translating batches")
     ]
 
-    return ''.join(partes_traduzidas)
+    return ''.join(translated_batches)
