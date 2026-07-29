@@ -53,17 +53,15 @@ audiobook. The `book-to-audiobook` skill drives the conversation through 8
 Gates — nothing is inferred or defaulted silently, everything below is
 confirmed by you before the pipeline moves on:
 
-```mermaid
-flowchart LR
-    A["0 · Setup"] --> B["1 · Book & preferences"]
-    B --> C["2 · Inspect"]
-    C --> D["3 · Confirm start/end cut"]
-    D --> E["4 · Confirm metadata"]
-    E --> F["5 · Translate"]
-    F --> G["6 · Review pronunciation"]
-    G --> H["7 · Convert"]
-    H --> I["8 · Review result"]
-```
+0. **Setup** — checks Python/ffmpeg dependencies.
+1. **Book & preferences** — pick the book, source/target language, voice, speed.
+2. **Inspect** — extracts the text and shows cleaning stats and boundary candidates.
+3. **Confirm start/end cut** — you confirm exactly where the real content starts and ends.
+4. **Confirm metadata** — you confirm title/author/subtitle used for the spoken intro.
+5. **Translate** — translates the trimmed text, only if a target language was requested.
+6. **Review pronunciation** — you review flagged acronyms/numbers/foreign names before synthesis.
+7. **Convert** — synthesizes and combines the final audio.
+8. **Review result** — you listen to the output and confirm it isn't truncated.
 
 Voice, source/target language, speed, and the exact start/end of the "real"
 content (skipping tables of contents, front matter, back-of-book ads) are
