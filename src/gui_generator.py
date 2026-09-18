@@ -1,5 +1,6 @@
 import os
 import threading
+import webbrowser
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -25,15 +26,17 @@ VOICES = [
     ("en-US-AndrewNeural", "Andrew · 男声（英语）"),
     ("en-US-AvaNeural", "Ava · 女声（英语）"),
 ]
-RATES = [("-10%", "慢一点 (-10%)"), ("+0%", "正常 (+0%)"), ("+10%", "稍快 (+10%)"),
-         ("+20%", "快 (+20%)"), ("+30%", "很快 (+30%)")]
+VOICE_PREVIEW = Path(__file__).resolve().parent.parent / "docs" / "voice-preview.html"
+RATES = [("-10%", "慢 -10%"), ("+0%", "正常 +0%"), ("+10%", "+10%"), ("+20%", "+20%"),
+         ("+30%", "+30%"), ("+40%", "+40%"), ("+50%", "快 +50%"), ("+75%", "+75%"),
+         ("+100%", "很快 +100%")]
 
 
 class GeneratorGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("有声书生成器 · 按章节批量生成")
-        self.geometry("760x780")
+        self.geometry("760x820")
         self.minsize(680, 700)
         self.configure(bg=BG)
         self.chapters = []
@@ -82,8 +85,25 @@ class GeneratorGUI(tk.Tk):
         return card
 
     def _create_widgets(self):
-        root = tk.Frame(self, bg=BG, padx=24, pady=20)
-        root.pack(fill=tk.BOTH, expand=True)
+        # Scrollable page: a Canvas hosting the content frame, with a vertical scrollbar.
+        canvas = tk.Canvas(self, bg=BG, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        root = tk.Frame(canvas, bg=BG, padx=24, pady=20)
+        window = canvas.create_window((0, 0), window=root, anchor=tk.NW)
+        root.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+
+        def _on_wheel(e):
+            if isinstance(e.widget, tk.Text):  # let the log scroll itself
+                return
+            delta = e.delta if abs(e.delta) < 20 else e.delta // 120  # macOS vs Windows
+            canvas.yview_scroll(-delta, "units")
+        self.bind_all("<MouseWheel>", _on_wheel)
+        self.bind_all("<Button-4>", lambda _e: canvas.yview_scroll(-1, "units"))  # Linux
+        self.bind_all("<Button-5>", lambda _e: canvas.yview_scroll(1, "units"))
 
         self._label(root, "有声书生成器", "title").pack(anchor=tk.W)
         self._label(root, "把电子书的每一章生成一个 MP3 文件。按 ①→④ 的顺序填写即可。", "sub").pack(anchor=tk.W, pady=(0, 14))
@@ -121,9 +141,17 @@ class GeneratorGUI(tk.Tk):
         self.cmb_voice.current(0)
         self.cmb_voice.grid(row=2, column=1, columnspan=2, sticky=tk.EW, padx=(12, 0), pady=4)
         self._label(c3, "语速").grid(row=3, column=0, sticky=tk.W, pady=4)
-        self.cmb_rate = ttk.Combobox(c3, state="readonly", values=[label for _, label in RATES])
-        self.cmb_rate.current(1)
-        self.cmb_rate.grid(row=3, column=1, columnspan=2, sticky=tk.EW, padx=(12, 0), pady=4)
+        self.var_rate = tk.StringVar(value="+0%")
+        rate_box = tk.Frame(c3, bg=c3.cget("bg"))
+        rate_box.grid(row=3, column=1, columnspan=2, sticky=tk.W, padx=(12, 0), pady=4)
+        for i, (value, label) in enumerate(RATES):
+            tk.Radiobutton(rate_box, text=label, value=value, variable=self.var_rate,
+                           bg=c3.cget("bg"), fg=TEXT, activebackground=c3.cget("bg"),
+                           font=(FONT, 12)).grid(row=i // 5, column=i % 5, sticky=tk.W, padx=(0, 10))
+        link = tk.Label(c3, text="▶ 试听所有声音和语速", bg=c3.cget("bg"), fg=ACCENT,
+                        cursor="hand2", font=(FONT, 12, "underline"))
+        link.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=(6, 0))
+        link.bind("<Button-1>", lambda _e: self._open_voice_preview())
 
         # ④ Output
         c4 = self._card(root, "④", "保存位置",
@@ -146,6 +174,12 @@ class GeneratorGUI(tk.Tk):
         self.txt_log.pack(fill=tk.BOTH, expand=True)
 
     # ---------- chapter loading ----------
+    def _open_voice_preview(self):
+        if not VOICE_PREVIEW.exists():
+            messagebox.showinfo("试听页面不存在", "请先运行：python scripts/build_voice_preview.py")
+            return
+        webbrowser.open(VOICE_PREVIEW.as_uri())
+
     def _browse_file(self):
         path = filedialog.askopenfilename(
             title="选择电子书", filetypes=[("EPUB / TXT", "*.epub *.txt"), ("所有文件", "*.*")])
@@ -229,9 +263,13 @@ class GeneratorGUI(tk.Tk):
 
     def _update_progress(self, current: int, total: int, msg: str):
         def _update():
-            self.progress_bar["maximum"] = total
-            self.progress_bar["value"] = current
-            self.lbl_status.config(text=f"进度 {current}/{total}")
+            # "Processing" fires before chapter `current` is done; the others fire after.
+            done = current - 1 if msg.startswith("Processing") else current
+            steps = done * 10 // total if total else 0  # one step per 1/10 of the files
+            self.progress_bar["maximum"] = 10
+            self.progress_bar["value"] = steps
+            self.btn_start.config(text=f"正在生成  {'▰' * steps}{'▱' * (10 - steps)}  {steps * 10}%")
+            self.lbl_status.config(text=f"进度 {done}/{total}")
             self._log(msg)
         self.after(0, _update)
 
@@ -257,7 +295,7 @@ class GeneratorGUI(tk.Tk):
         start_ch = self.chapters[s].index
         ch_count = e - s + 1
         voice = VOICES[self.cmb_voice.current()][0]
-        rate = RATES[self.cmb_rate.current()][0]
+        rate = self.var_rate.get()
 
         self._set_enabled(self.btn_start, False, "正在生成…")
         self._log(f"开始生成：第 {start_ch} 到第 {start_ch + ch_count - 1} 章，声音 {voice}，语速 {rate}")

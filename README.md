@@ -83,6 +83,12 @@ python -m src.cli chapter-convert books/private/my-novel.epub \
   --voice zh-CN-YunjianNeural
 ```
 
+**Preview voices and speeds:** open [`docs/voice-preview.html`](docs/voice-preview.html) in a browser (or click **▶ 试听所有声音和语速** in the GUI) to play every voice × rate the GUI offers. Regenerate it after changing `VOICES`/`RATES` in `src/gui_generator.py`:
+
+```bash
+python scripts/build_voice_preview.py
+```
+
 Each chapter is generated into a pure numeric file (e.g. `0001.mp3`, `0002.mp3`). Progress is automatically tracked in `./output_chapters/progress.json`. Interrupting and re-running will resume from uncompleted chapters.
 
 ### 2. Swimming MP3 Player Copier GUI
