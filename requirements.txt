@@ -26,5 +26,5 @@ requests>=2.31.0
 # Gerenciamento de variáveis de ambiente
 python-dotenv>=1.0.0
 
-audioop-lts
+audioop-lts; python_version >= "3.13"
 

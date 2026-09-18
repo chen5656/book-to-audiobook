@@ -13,13 +13,19 @@
 </p>
 
 <p align="center">
-  Turn any epub / pdf / txt into a narrated audiobook, in any language —<br>
+  Turn any epub / pdf / txt into a narrated audiobook or chapter-based MP3 collection —<br>
   100% free, no API key.
 </p>
+
+> [!NOTE]
+> **Fork Attribution & Credit**  
+> This project is a fork of [`gomesfellipe/book-to-audiobook`](https://github.com/gomesfellipe/book-to-audiobook) by [Fellipe Gomes](https://github.com/gomesfellipe).  
+> This enhanced edition adds chapter-based batch audio conversion for web novels/epubs, automatic `progress.json` resume capability, interactive GUIs, and a dedicated swimming MP3 player file copying tool.
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#how-it-works">How it works</a> ·
+  <a href="#chapter-batch-generation--swimming-mp3-copier">Chapter Batch & Copier</a> ·
   <a href="#cli-usage-without-the-assistant">CLI usage</a> ·
   <a href="#structure">Structure</a> ·
   <a href="#contributing--development">Contributing</a>
@@ -37,71 +43,87 @@ internet.
 
 - 🆓 **100% free, no API key** — no OpenAI/ElevenLabs/Polly bill, ever.
 - 🌍 **Any source/target language** — translation is optional; hundreds of
-  real Neural voices to pick from.
-- ✅ **Human-in-the-loop, not a black box** — you confirm where the real
-  content starts and ends, the title/author, and review every
-  pronunciation-risky word before a single second of audio gets generated.
-- ⚡ **Smart caching** — extraction and translation are cached, so
-  regenerating with a different voice or speed is instant, no
-  re-processing.
-- 📚 **epub / pdf / txt in, one `.mp3` out.**
+  real Neural voices to pick from (including Chinese, English, Spanish, etc.).
+- 📖 **Chapter-by-Chapter Batch Processing** — specify start chapter & count (e.g. Chapter 10, 100 chapters) and output one MP3 file per chapter named strictly by chapter number.
+- 🔄 **Automatic Resume (`progress.json`)** — network drops or system restarts automatically resume from where synthesis left off.
+- 🏊 **Swimming MP3 Player Copier** — companion tool auto-detects external drives and copies MP3s in exact sequential numerical order so players read them correctly.
+- 🖥️ **Graphical User Interfaces** — launch standalone Tkinter GUIs for both generator and copier tools.
+- 📚 **epub / pdf / txt supported.**
 
 ## How it works
 
 Ask Claude Code (opened at the root of this repo) to turn a book into an
-audiobook. The `book-to-audiobook` skill drives the conversation through 8
-Gates — nothing is inferred or defaulted silently, everything below is
-confirmed by you before the pipeline moves on:
+audiobook, or use the interactive GUIs and CLI tools:
 
 0. **Setup** — checks Python/ffmpeg dependencies.
 1. **Book & preferences** — pick the book, source/target language, voice, speed.
-2. **Inspect** — extracts the text and shows cleaning stats and boundary candidates.
-3. **Confirm start/end cut** — you confirm exactly where the real content starts and ends.
-4. **Confirm metadata** — you confirm title/author/subtitle used for the spoken intro.
-5. **Translate** — translates the trimmed text, only if a target language was requested.
-6. **Review pronunciation** — you review flagged acronyms/numbers/foreign names before synthesis.
-7. **Convert** — synthesizes and combines the final audio.
-8. **Review result** — you listen to the output and confirm it isn't truncated.
+2. **Inspect & Chapter Selection** — select whole-book conversion or chapter range.
+3. **Convert & Resume** — synthesizes audio chapters, saving progress to `progress.json`.
+4. **Copy to Device** — transfer generated MP3s in strict natural numerical order to your swimming MP3 player.
 
-Voice, source/target language, speed, and the exact start/end of the "real"
-content (skipping tables of contents, front matter, back-of-book ads) are
-always explicit choices made in the conversation — never auto-detected.
+---
+
+## Chapter Batch Generation & Swimming MP3 Copier
+
+### 1. Chapter Batch Generator GUI
+
+Launch the desktop interface to batch convert chapters with start chapter and count selection:
+
+```bash
+python -m src.cli gui-generator
+```
+
+Or via CLI:
+
+```bash
+python -m src.cli chapter-convert books/private/my-novel.epub \
+  --output-dir ./output_chapters \
+  --start-chapter 1 \
+  --chapter-count 100 \
+  --voice zh-CN-YunjianNeural
+```
+
+Each chapter is generated into a pure numeric file (e.g. `0001.mp3`, `0002.mp3`). Progress is automatically tracked in `./output_chapters/progress.json`. Interrupting and re-running will resume from uncompleted chapters.
+
+### 2. Swimming MP3 Player Copier GUI
+
+Swimming MP3 players usually play audio files in the order they were written to the FAT filesystem. Launch the copier GUI to auto-detect your MP3 player drive and copy files in natural numerical order:
+
+```bash
+python -m src.cli gui-copier
+```
+
+Or via CLI:
+
+```bash
+python -m src.cli copy-to-device \
+  --source-dir ./output_chapters \
+  --target-dir /Volumes/SWIM_MP3/Audiobooks
+```
+
+---
 
 ## Quick start
 
-This is a public [Claude Code Skill](https://code.claude.com/docs/en/skills)
-— there's no separate install step:
-
 1. Clone this repository.
-2. Open Claude Code **at the root of the cloned folder**.
-3. Drop the epub/pdf/txt of the book into `books/private/` (never
-   versioned, see [`books/private/README.md`](books/private/README.md)).
-4. Ask: *"turn `my-book.epub` into an audiobook"*. The skill checks
-   dependencies, asks for source/target language, voice and speed, shows
-   where the real content starts/ends for you to confirm, shows
-   pronunciation-risky snippets for review, and only then generates the
-   mp3.
+2. Open terminal at the root of the cloned folder.
+3. Install dependencies: `pip install -r requirements.txt`
+4. Drop your book into `books/private/` (never versioned).
+5. Run `python -m src.cli gui-generator` or `python -m src.cli chapter-convert ...` to generate audiobooks.
 
-No book on hand? `books/alice.epub` ships in the repo (*Alice's Adventures
-in Wonderland*, public domain) — ask *"turn books/alice.epub into an
-audiobook"* and follow the Gates.
-
-The first run can take a bit longer — the skill checks/installs
-dependencies on its own (`doctor`). That's not a hang.
+No book on hand? `books/alice.epub` ships in the repo (*Alice's Adventures in Wonderland*, public domain).
 
 ## Requirements
 
-- Python 3.10+
-- [`ffmpeg`](https://ffmpeg.org/) installed on the system (`brew install ffmpeg`
-  on macOS, `apt install ffmpeg` on Linux) — used by `pydub` to manipulate
-  audio.
-- Internet (edge-tts and GoogleTranslator are free, but online).
+- Python 3.10+ (or 3.9+)
+- [`ffmpeg`](https://ffmpeg.org/) installed on the system (`brew install ffmpeg` on macOS, `apt install ffmpeg` on Linux).
+- Internet access (for Microsoft Edge Neural TTS voices).
 
 ```bash
 pip install -r requirements.txt
 ```
 
-To run the tests:
+To run tests:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -110,54 +132,40 @@ pytest
 
 ## CLI usage (without the assistant)
 
-The same pipeline also runs directly via `src/cli.py`, if you'd rather
-control the parameters manually:
-
 ```bash
-# Check that ffmpeg and the Python libs are present
+# Check dependencies
 python -m src.cli doctor
 
-# Extract text + metadata + start/end boundary candidates for the real
-# content. Also reports cleaning stats (decorative lines stripped, roman
-# numeral chapter headings converted to digits — both automatic).
-python -m src.cli inspect books/alice.epub --json
+# Launch Batch Generator GUI
+python -m src.cli gui-generator
 
-# List real edge-tts voices for a given language, e.g. Portuguese
-python -m src.cli voices --lang pt --json
+# Launch Swimming MP3 Copier GUI
+python -m src.cli gui-copier
 
-# Flag acronyms/numbers/foreign names to review for pronunciation.
-# Add --source-lang/--translate-to to review (and cache) the *translated*
-# text instead — that's what actually gets spoken if you're translating.
-python -m src.cli pronunciation books/alice.epub \
-  --start-char 2100 --end-char 158000 \
-  [--source-lang en --translate-to <lang>] --json
+# Batch convert chapters via CLI
+python -m src.cli chapter-convert books/private/my-novel.epub \
+  --output-dir ./my_output \
+  --start-chapter 10 \
+  --chapter-count 100 \
+  --voice zh-CN-YunjianNeural
 
-# Generate the audiobook (offsets decided from the inspect above). If a
-# translation was requested, the pronunciation step above already cached
-# it, so this just synthesizes audio.
-python -m src.cli convert books/alice.epub \
-  --start-char 2100 --end-char 158000 \
-  --voice <voice-id> --source-lang en --rate +0% [--translate-to <lang>] \
-  --output alice.mp3
+# Copy files sequentially to swimming MP3 player
+python -m src.cli copy-to-device \
+  --source-dir ./my_output \
+  --target-dir /Volumes/MP3_PLAYER
 ```
-
-`--start-char`/`--end-char` are always explicit — there's no automatic
-start/end cut without human confirmation. Voice, source/target language,
-speed, input file, and output folder are also always explicit parameters:
-nothing is read from `.env` (see [`.env.example`](.env.example)).
-
-Translated text is cached in `.cache/` alongside the extracted source text,
-keyed by book, confirmed offsets, and target language, so re-running
-`convert` (e.g. just to tweak voice or speed) skips re-translating.
-Temporary per-part audio files also live in `.cache/` during synthesis, not
-next to the final output file.
 
 ## Structure
 
 ```text
 src/
   loaders/          epub, pdf, txt -> text
-  text_cache.py      cache of extracted/translated text (avoids reprocessing)
+  chapter_loader.py  extracts discrete chapters from EPUB/TXT
+  chapter_pipeline.py batch chapter synthesis with progress.json resume logic
+  copier.py          external drive auto-detection & sequential natural sorting copy
+  gui_generator.py   Tkinter GUI for chapter batch generation
+  gui_copier.py      Tkinter GUI for swimming MP3 player file copier
+  text_cache.py      cache of extracted/translated text
   cleaning.py         strips decorative lines, normalizes roman numerals
   boundary.py           start/end candidates for the real content
   metadata.py             title/author/subtitle
@@ -166,18 +174,14 @@ src/
   translate.py                 batched translation
   text_to_speech.py              text -> mp3 (edge-tts), voice catalog lookup
   tools.py                         split text / combine mp3s
-  pipeline.py                        orchestrates everything (convert_book_to_audio)
-  cli.py                               doctor | inspect | pronunciation | voices | convert
-.claude/skills/book-to-audiobook/  the Claude Code Skill/plugin
-books/alice.epub          demo fixture (public domain, Project Gutenberg)
+  pipeline.py                        orchestrates whole-book single-file conversion
+  cli.py                               command-line entry point
+books/alice.epub          demo fixture (public domain)
 ```
 
 ## Contributing / development
 
-See [`CLAUDE.md`](CLAUDE.md) for the architecture overview (how the Gates in
-the skill map to `src/`, the extraction/translation cache, the synthesis
-retry logic) and the commands to run tests. `CLAUDE.local.md`, if present, is
-personal and gitignored — it's not part of this repo's shared guidance.
+See [`CLAUDE.md`](CLAUDE.md) for architecture overview and test running commands.
 
 ## License
 
@@ -186,5 +190,6 @@ personal and gitignored — it's not part of this repo's shared guidance.
 ---
 
 <p align="center">
-  Built by <a href="https://github.com/gomesfellipe">Fellipe Gomes</a>
+  Original work by <a href="https://github.com/gomesfellipe">Fellipe Gomes</a> (<a href="https://github.com/gomesfellipe/book-to-audiobook">gomesfellipe/book-to-audiobook</a>)
 </p>
+

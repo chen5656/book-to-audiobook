@@ -145,6 +145,52 @@ def cmd_voices(args) -> int:
     return 0
 
 
+def cmd_chapter_convert(args) -> int:
+    from src.chapter_pipeline import batch_convert_chapters
+
+    def _progress(current: int, total: int, msg: str):
+        print(f"[{current}/{total}] {msg}")
+
+    files = batch_convert_chapters(
+        book_path=args.book_path,
+        output_dir=args.output_dir,
+        start_chapter=args.start_chapter,
+        chapter_count=args.chapter_count,
+        voice=args.voice,
+        rate=args.rate,
+        progress_callback=_progress,
+    )
+    print(f"[OK] Processed {len(files)} chapters in {args.output_dir}")
+    return 0
+
+
+def cmd_copy_to_device(args) -> int:
+    from src.copier import copy_audio_files_to_device
+
+    def _progress(current: int, total: int, msg: str):
+        print(f"[{current}/{total}] {msg}")
+
+    files = copy_audio_files_to_device(
+        source_dir=args.source_dir,
+        target_dir=args.target_dir,
+        progress_callback=_progress,
+    )
+    print(f"[OK] Copied {len(files)} audio files to {args.target_dir}")
+    return 0
+
+
+def cmd_gui_generator(args) -> int:
+    from src.gui_generator import main as run_generator_gui
+    run_generator_gui()
+    return 0
+
+
+def cmd_gui_copier(args) -> int:
+    from src.gui_copier import main as run_copier_gui
+    run_copier_gui()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="book-to-audiobook")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -181,6 +227,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_voices.add_argument("--lang", default=None)
     p_voices.add_argument("--json", action="store_true")
     p_voices.set_defaults(func=cmd_voices)
+
+    p_chap = subparsers.add_parser("chapter-convert")
+    p_chap.add_argument("book_path")
+    p_chap.add_argument("--output-dir", required=True)
+    p_chap.add_argument("--start-chapter", type=int, default=1)
+    p_chap.add_argument("--chapter-count", type=int, default=None)
+    p_chap.add_argument("--voice", default="zh-CN-YunjianNeural")
+    p_chap.add_argument("--rate", default="+0%")
+    p_chap.set_defaults(func=cmd_chapter_convert)
+
+    p_copy = subparsers.add_parser("copy-to-device")
+    p_copy.add_argument("--source-dir", required=True)
+    p_copy.add_argument("--target-dir", required=True)
+    p_copy.set_defaults(func=cmd_copy_to_device)
+
+    subparsers.add_parser("gui-generator").set_defaults(func=cmd_gui_generator)
+    subparsers.add_parser("gui-copier").set_defaults(func=cmd_gui_copier)
 
     return parser
 
